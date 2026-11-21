@@ -1,0 +1,184 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Warm neutral ramp keeps existing surface/text utilities consistent across the app. */
+@theme {
+  --color-white: #fbf7f1;
+  --color-slate-50: #fbf7f1;
+  --color-slate-100: #f4ebe0;
+  --color-slate-200: #ded4c5;
+  --color-slate-300: #c2b7a7;
+  --color-slate-400: #6c6253;
+  --color-slate-500: #62594d;
+  --color-slate-600: #574e43;
+  --color-slate-700: #443c33;
+  --color-slate-800: #332e28;
+  --color-slate-900: #24211c;
+  --color-slate-950: #1d1b18;
+
+  --color-sage-50: #f1f5e9;
+  --color-sage-100: #e7efd9;
+  --color-sage-200: #cfe3b2;
+  --color-sage-300: #bad397;
+  --color-sage-400: #8da96c;
+  --color-sage-500: #6e8b4d;
+  --color-sage-600: #526c38;
+  --color-sage-700: #40562c;
+  --color-sage-800: #344525;
+  --color-sage-900: #2b3921;
+  --color-sage-950: #1d2818;
+
+  --color-lavender-50: #f6f2fa;
+  --color-lavender-100: #e7ddf5;
+  --color-lavender-200: #d8c9eb;
+  --color-lavender-300: #c0acd9;
+  --color-lavender-400: #a08bbd;
+  --color-lavender-500: #85709e;
+  --color-lavender-600: #70588a;
+  --color-lavender-700: #5f4878;
+  --color-lavender-800: #4d3b60;
+  --color-lavender-900: #3b2e49;
+  --color-lavender-950: #261e30;
+
+  --color-emerald-50: #eff4e7;
+  --color-emerald-100: #e2edcf;
+  --color-emerald-200: #c9dcae;
+  --color-emerald-300: #acc68d;
+  --color-emerald-400: #8cac6b;
+  --color-emerald-500: #66884d;
+  --color-emerald-600: #526f3e;
+  --color-emerald-700: #3f5b30;
+  --color-emerald-800: #334b27;
+  --color-emerald-900: #293b22;
+  --color-emerald-950: #192817;
+
+  --color-amber-50: #fcf5e5;
+  --color-amber-100: #f6e6c9;
+  --color-amber-200: #ecd39c;
+  --color-amber-300: #d9b974;
+  --color-amber-400: #c6a15a;
+  --color-amber-500: #a9853e;
+  --color-amber-600: #8a682d;
+  --color-amber-700: #755322;
+  --color-amber-800: #60441e;
+  --color-amber-900: #4e381c;
+  --color-amber-950: #302314;
+
+  --color-rose-50: #fbefeb;
+  --color-rose-100: #f8d5cf;
+  --color-rose-200: #efb8af;
+  --color-rose-300: #e39a8f;
+  --color-rose-400: #ce7a6d;
+  --color-rose-500: #b65f52;
+  --color-rose-600: #a24639;
+  --color-rose-700: #8c382c;
+  --color-rose-800: #702e25;
+  --color-rose-900: #572b24;
+  --color-rose-950: #361a16;
+
+  --shadow-xs: 0 1px 2px rgb(58 44 28 / 0.08);
+  --shadow-lg: 0 8px 24px rgb(58 44 28 / 0.12);
+}
+
+@layer base {
+  :root {
+    --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-sans: 'DM Sans', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --stage-surface: #f7efe4;
+    --stage-grid: rgb(152 131 100 / 0.22);
+    --diagram-edge: #817461;
+    --diagram-edge-active: #526c38;
+    color-scheme: light;
+  }
+
+  .dark {
+    --color-slate-50: #fbf7ee;
+    --color-slate-100: #eeeadd;
+    --color-slate-200: #d9d6c8;
+    --color-slate-300: #c8c1b2;
+    --color-slate-400: #b0a592;
+    --color-slate-500: #a09683;
+    --color-slate-600: #998e79;
+    --color-slate-700: #575343;
+    --color-slate-800: #3e4436;
+    --color-slate-900: #292e24;
+    --color-slate-950: #1c211a;
+    --color-sage-400: #b1ce8f;
+    --color-sage-500: #98b978;
+    --stage-surface: #22271e;
+    --stage-grid: rgb(183 193 156 / 0.14);
+    --diagram-edge: #a89b84;
+    --diagram-edge-active: #b1ce8f;
+    color-scheme: dark;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-slate-100);
+    color: var(--color-slate-950);
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+  }
+
+  code, pre, .font-mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+    outline: 2px solid var(--color-sage-700);
+    outline-offset: 3px;
+  }
+
+  .dark :is(button, input, select, a):focus-visible {
+    outline-color: var(--color-sage-300);
+  }
+
+  ::selection {
+    background: var(--color-sage-200);
+    color: #1d1b18;
+  }
+}
+
+@layer components {
+  .algo-primary {
+    border: 1px solid var(--color-slate-800);
+    background: var(--color-sage-200);
+    color: #1d1b18;
+    box-shadow: 0 2px 0 var(--color-slate-800);
+  }
+
+  .algo-primary:hover:not(:disabled) {
+    background: var(--color-sage-300);
+  }
+
+  .algo-selected {
+    border-color: var(--color-sage-700);
+    background: var(--color-sage-200);
+    color: #1d1b18;
+    box-shadow: 0 1px 0 var(--color-sage-700);
+  }
+
+  .dark .algo-selected {
+    border-color: var(--color-sage-400);
+    background: var(--color-sage-900);
+    color: var(--color-sage-100);
+  }
+}
+
+.algo-dot-grid {
+  background-color: var(--stage-surface);
+  background-image: radial-gradient(var(--stage-grid) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

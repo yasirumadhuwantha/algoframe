@@ -1,0 +1,10 @@
+# AlgoFrame Visualizer UI Conventions
+
+- Color direction follows the user's [reference](https://designed-to-scale.vercel.app/#/indexes/8): warm ivory page (`#f4ebe0`), cream panels (`#fbf7f1`), sage selection/actions (`#cfe3b2`), charcoal text, lavender pointer rewiring, amber allocation/shift, and muted terracotta errors. Preserve AlgoFrame's own content and typography.
+- Keep colors centralized in `src/index.css`: the existing `slate` utility ramp intentionally represents warm neutrals; `sage` is the primary accent and `lavender` marks rewiring. Muted `emerald`, `amber`, and `rose` retain their semantic roles. Use the shared `algo-primary` / `algo-selected` control styles and `--stage-*` / `--diagram-edge*` variables instead of literal colors in components/SVG.
+- Dark mode uses olive-charcoal surfaces and lighter text/accent tokens. Check small labels against their actual pastel or dark surface, not only the page background. Preserve visible keyboard focus, reduced-motion styling, and a header that wraps without page-wide overflow at narrow widths.
+- Precision engineering stage: dot-grid canvas (`radial-gradient`) with crisp hairline borders and single-level surface elevation.
+- Dual-coded semantic states: always pair color accents with explicit status text labels (`EXECUTING`, `ALLOCATING`, `COMPLETED`, `Retained`, `rewired pointer`).
+- Tabular numeric alignment (`tabular-nums` + `JetBrains Mono`) for all memory addresses, indices, byte sizes, and microsecond costs.
+- Keep `PythonCodeBox` to the right of the canvas on desktop and below it on narrow screens, synchronized with `step.python_line` and keyboard shortcut `C`. Scroll highlights inside the code panel, without moving the entire page. The first learning frame is function entry; later frames show state after the highlighted operation line.
+- Course navigation follows the six lecture topics. Show time complexity, auxiliary/structure space, results, and local variables without presenting modeled memory or execution-line counts as benchmarks. Keep complexity explanations close to the visualization.

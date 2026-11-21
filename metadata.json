@@ -1,0 +1,6 @@
+{
+  "name": "AlgoFrame",
+  "description": "Interactive Data Structures & Algorithms visualizer with deterministic Python trace generation, memory-address inspection, and synchronized Python code execution.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

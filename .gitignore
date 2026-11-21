@@ -1,0 +1,17 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Python test output and caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# Local conversation snapshots and tool caches. Keep this as the final rule.
+/.local/
