@@ -5,7 +5,8 @@ export type StructureType =
   | 'binary_tree'
   | 'stack'
   | 'queue'
-  | 'hash_table';
+  | 'hash_table'
+  | 'graph';
 
 export type HighlightState =
   | 'default'
@@ -127,4 +128,6 @@ export interface SimulationParams {
   operation?: string;
   payloadValue?: number;
   frontIndex?: number;
+  edges?: number[][];
+  targetVertex?: number;
 }

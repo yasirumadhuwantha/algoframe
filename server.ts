@@ -25,6 +25,7 @@ const ALLOWED_STRUCTURES = new Set([
   'stack',
   'queue',
   'hash_table',
+  'graph',
 ]);
 
 async function runPythonSimulation(params: {
@@ -36,6 +37,8 @@ async function runPythonSimulation(params: {
   operation?: string;
   payloadValue?: number;
   frontIndex?: number;
+  edges?: number[][];
+  targetVertex?: number;
 }) {
   if (params.operation !== undefined && !ALLOWED_STRUCTURES.has(params.structure)) {
     throw new Error('Choose a supported data structure');
@@ -50,8 +53,11 @@ async function runPythonSimulation(params: {
     if (params.values !== undefined && (!Array.isArray(params.values) || params.values.length > 24 || params.values.some(n => !Number.isSafeInteger(n) || Math.abs(n) > 1_000_000))) {
       throw new Error('Use at most 24 integers between -1000000 and 1000000');
     }
-    for (const number of [params.insertValue, params.insertIndex, params.capacity, params.payloadValue, params.frontIndex]) {
+    for (const number of [params.insertValue, params.insertIndex, params.capacity, params.payloadValue, params.frontIndex, params.targetVertex]) {
       if (number !== undefined && (!Number.isSafeInteger(number) || Math.abs(number) > 1_000_000)) throw new Error('Parameters must be integers between -1000000 and 1000000');
+    }
+    if (params.edges !== undefined && (!Array.isArray(params.edges) || params.edges.length > 48 || params.edges.some(edge => !Array.isArray(edge) || edge.length !== 2 || edge.some(n => !Number.isSafeInteger(n) || Math.abs(n) > 1_000_000)))) {
+      throw new Error('Use at most 48 edges, each containing two integer vertices');
     }
     args.push('--operation', params.operation);
   }
@@ -69,6 +75,8 @@ async function runPythonSimulation(params: {
   }
   if (params.payloadValue !== undefined) args.push('--payload-value', String(params.payloadValue));
   if (params.frontIndex !== undefined) args.push('--front-index', String(params.frontIndex));
+  if (params.edges !== undefined) args.push('--edges', JSON.stringify(params.edges));
+  if (params.targetVertex !== undefined) args.push('--target-vertex', String(params.targetVertex));
 
   try {
     const { stdout } = await execFileAsync('python3', args, {
@@ -113,6 +121,8 @@ async function createServer() {
         operation: body.operation,
         payloadValue: body.payloadValue,
         frontIndex: body.frontIndex,
+        edges: body.edges,
+        targetVertex: body.targetVertex,
       });
       res.json(trace);
     } catch (err: unknown) {
@@ -144,6 +154,8 @@ async function createServer() {
         operation: typeof req.query.operation === 'string' ? req.query.operation : undefined,
         payloadValue: req.query.payloadValue !== undefined ? Number(req.query.payloadValue) : undefined,
         frontIndex: req.query.frontIndex !== undefined ? Number(req.query.frontIndex) : undefined,
+        edges: typeof req.query.edges === 'string' ? JSON.parse(req.query.edges) : undefined,
+        targetVertex: req.query.targetVertex !== undefined ? Number(req.query.targetVertex) : undefined,
       });
       res.json(trace);
     } catch (err: unknown) {

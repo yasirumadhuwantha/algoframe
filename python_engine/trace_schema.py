@@ -13,6 +13,7 @@ StructureType = Literal[
     "stack",
     "queue",
     "hash_table",
+    "graph",
 ]
 
 HighlightState = Literal[

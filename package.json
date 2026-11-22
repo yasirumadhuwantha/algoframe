@@ -14,6 +14,7 @@
     "test:engine": "python -m python_engine.run_tests",
     "test:workflow": "python -m unittest discover -s tests -p \"test_*.py\"",
     "test:smoke": "python -m unittest discover -s tests/integration -p test_server.py",
+    "test:browser": "node --test tests/browser/playback.test.mjs",
     "test": "npm run test:engine && npm run test:workflow",
     "check": "npm run typecheck && npm run lint && npm test && npm run build && npm run test:smoke",
     "chat:backup": "python scripts/chat_backup.py"

@@ -74,6 +74,9 @@ class ServerSmokeTests(unittest.TestCase):
 
                 # Empty input must stay empty, and operation must reach the Python engine.
                 for payload, expected in (
+                    ({"structure": "dynamic_array", "operation": "define", "values": []}, []),
+                    ({"structure": "dynamic_array", "operation": "define", "values": [3, -1, 8]}, [3, -1, 8]),
+                    ({"structure": "graph", "operation": "define", "values": [0, 1, 2], "edges": [[0, 1], [1, 2]]}, [0, 1, 2]),
                     ({"structure": "stack", "operation": "push", "values": [], "insertValue": 7}, [7]),
                     ({"structure": "queue", "operation": "dequeue", "values": [7, 8]}, [8]),
                     ({"structure": "dynamic_array", "operation": "delete", "values": [7, 8], "insertIndex": 0}, [8]),
@@ -94,6 +97,9 @@ class ServerSmokeTests(unittest.TestCase):
                     {"structure": "stack", "operation": "pop", "values": []},
                     {"structure": "stack", "operation": "push", "values": "not-an-array"},
                     {"structure": "dynamic_array", "operation": "insert", "values": [1.5]},
+                    {"structure": "graph", "operation": "define", "values": [0, 1], "edges": [[0, 99]]},
+                    {"structure": "graph", "operation": "define", "values": [0, 1], "edges": "not-an-edge-list"},
+                    {"structure": "graph", "operation": "add_edge", "values": [0, 1], "insertValue": 0, "targetVertex": 99},
                 ):
                     with self.subTest(mode=script, invalid=payload):
                         request = Request(base + "/api/simulate", method="POST", data=json.dumps(payload).encode(),
@@ -110,6 +116,16 @@ class ServerSmokeTests(unittest.TestCase):
                     self.assertEqual(json.load(response)["metadata"]["final_values"], [7])
                 with urlopen(base + "/api/simulate?structure=dynamic_array&operation=delete&values=-1,-2,-3&insertIndex=1", timeout=10) as response:
                     self.assertEqual(json.load(response)["metadata"]["final_values"], [-1, -3])
+                request = Request(base + "/api/simulate", method="POST", headers={"Content-Type": "application/json"}, data=json.dumps({
+                    "structure": "graph", "operation": "bfs", "values": [0, 1, 2], "edges": [[0, 1], [1, 2]], "insertValue": 0,
+                }).encode())
+                with urlopen(request, timeout=10) as response:
+                    self.assertEqual(json.load(response)["metadata"]["result"], [0, 1, 2])
+                request = Request(base + "/api/simulate", method="POST", headers={"Content-Type": "application/json"}, data=json.dumps({
+                    "structure": "graph", "operation": "add_edge", "values": [0, 2], "insertValue": 0, "targetVertex": 2,
+                }).encode())
+                with urlopen(request, timeout=10) as response:
+                    self.assertEqual(json.load(response)["metadata"]["adjacency"], {"0": [2], "2": [0]})
             finally:
                 if process.poll() is None:
                     if os.name == "nt":

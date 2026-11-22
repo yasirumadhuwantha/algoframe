@@ -119,6 +119,10 @@
     color: var(--color-slate-950);
   }
 
+  button, input, select {
+    transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  }
+
   h1, h2, h3, .font-display {
     font-family: var(--font-display);
   }
@@ -151,8 +155,14 @@
     box-shadow: 0 2px 0 var(--color-slate-800);
   }
 
-  .algo-primary:hover:not(:disabled) {
+  button.algo-primary:hover:not(:disabled) {
     background: var(--color-sage-300);
+    transform: translateY(-1px);
+  }
+
+  button.algo-primary:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: none;
   }
 
   .algo-selected {
@@ -169,6 +179,23 @@
   }
 }
 
+.workspace-sticky {
+  top: calc(var(--app-header-height, 120px) + 16px);
+}
+
+.algo-node {
+  transition: background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease, color 160ms ease;
+}
+
+.algo-panel-enter {
+  animation: algo-enter 180ms ease-out both;
+}
+
+@keyframes algo-enter {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .algo-dot-grid {
   background-color: var(--stage-surface);
   background-image: radial-gradient(var(--stage-grid) 1px, transparent 1px);
@@ -179,6 +206,7 @@
   *, *::before, *::after {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
+    animation-name: none !important;
     scroll-behavior: auto !important;
   }
 }

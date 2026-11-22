@@ -2,6 +2,68 @@
 
 This is the single status and evidence log. [Feature inventory](features.md) defines capability boundaries. Dates use Asia/Colombo time.
 
+## 2026-11-22 — Initialization and graph workspace push preparation
+
+- The user explicitly requested pushing the pending work. Current branch/upstream: `master` / `origin/master`; origin matches `https://github.com/yasirumadhuwantha/algoframe.git`. The remote tip matches the existing local base at inspection, with no divergence requiring history changes.
+- Reviewed all 25 changed/new source, test, configuration and documentation files. Pending content contains no credential-pattern candidates, private backups, PDFs, dumps or generated artifacts. Existing private/generated paths remain outside tracked content. Documentation-link review passed.
+- Pre-push `npm.cmd run check` passed: typecheck, existing lint, 31 engine tests, 13 workflow tests, build and 2 development/production HTTP tests. `npm.cmd run test:browser` passed its native slider synchronization regression: 47 tests across the two commands.
+- `npm.cmd audit --json --cache .local/npm-cache` reported zero known vulnerabilities. `git diff --check` passed. The earlier browser record verifies all 37 operation flows, both themes, responsive wrapping and reduced motion for this source change.
+- This entry records verified preparation; the subsequent commit/push outcome is verified through Git refs and reported to the user. No deployment is part of this request.
+
+## 2026-11-22 — Initialization, graphs, and workspace controls
+
+### Acceptance criteria
+
+- Make Define (initial) the first/default operation, with explicit empty and user-defined input choices. Array choices read Empty array and User-defined array. Definitions execute Python and preserve source/canvas synchronization.
+- Remove the visible YOUR COURSE heading and the entire sidebar text block beginning with 6 TOPICS. Retain accessible navigation names.
+- Add an undirected adjacency-list Graphs lesson with definition, vertex/edge insertion/removal, BFS and DFS, editable vertices/edges, meaningful validation, and complexity explanations.
+- Render singly linked nodes as value/next compartments and doubly linked nodes as previous/value/next compartments, using actual trace references.
+- Move the shared playback controls and step slider into the top header. Add restrained transitions with reduced-motion support; retain the warm theme and right-side code layout.
+- Preserve legacy APIs and existing operations, write focused failing tests, run the full gate and actual responsive/interaction review. No commit, push or deployment is requested for this change.
+
+### Inspection and decisions
+
+- Git working tree is clean on master at inspection. Read current app, curriculum, engine/schema/API, tests, package scripts and TDD/UI/planning/security guidance. No changes from the interrupted message were present.
+- Initialization applies consistently across all structures; each lesson defaults to empty, with user-defined examples available. Capacity remains a reserved-slot teaching model where relevant.
+- Graphs are a new seventh topic, not presented as a seventh lecture PDF. Use bounded integer vertices and simple undirected edges, without adding a graph or animation dependency.
+
+### Implementation
+
+- Define (initial) is first/default across all eight lessons. Empty is selected initially; array choices are exactly Empty array and User-defined array. Custom values are retained when toggling modes. Definitions execute real Python construction steps; reserved buffer capacity is distinguished from the live value count.
+- Added fixed initialization/graph examples in `python_engine/learning_examples.py`, graph snapshots/complexity in the existing engine, and bounded `edges` / `targetVertex` forwarding through both API methods and CLI. Graphs are simple undirected/unweighted adjacency lists, supporting definition, vertex/edge addition/removal, BFS and DFS. Unknown endpoints, self links and malformed edges fail explicitly; duplicates collapse.
+- Split the form into `OperationForm`, playback into `PlaybackBar`, and linked nodes into `LinkedNodeCard`. Sidebar contains only topic navigation. Playback appears once, in the sticky top header; source/sidebar offsets track its responsive height. Code remains to the right at desktop widths and below on mobile.
+- Singly linked nodes have value/next compartments, doubly linked nodes previous/value/next. Pointer cells display real trace references. Graph vertices/edges use SVG and existing theme tokens; no graph/animation package was added.
+- Added short control/state-color and panel-entry transitions with reduced-motion support. New operation panels enter once; stepping does not replay their entry animation.
+- The broad browser sweep found a genuine native range regression: switching between equally sized traces could move the slider while the shared React cursor stayed at step 1. Added a permanent failing native-browser test, then keyed playback by completed execution to reset input tracking after loading changes its maximum. The test now passes across repeated enqueue/dequeue switches.
+- Added optional `npm run test:browser` using Node's built-in test runner, CDP, and an installed browser. This fills a demonstrated native-input gap in the Python/HTTP suites without adding dependencies or downloading browsers. It requires Node 22+ and fails clearly if no supported browser is installed.
+
+### Actual verification results
+
+| Command / check | Observed result |
+| --- | --- |
+| New engine acceptance tests before implementation | RED: 23 existing tests passed, 8 definition/graph tests failed on missing operation/parameters |
+| New graph HTTP cases before API forwarding | RED: graph definition and BFS requests returned 400 |
+| Engine suite after implementation | PASS: 31 tests, including all empty definitions, incremental custom arrays, linked references, graph symmetry/deduplication, editing, cyclic/disconnected traversal and invalid edges/endpoints |
+| Initial browser sweep | Verified requested features; a later broad sweep exposed same-length playback desynchronization. Temporary harness viewport/timing mistakes were corrected separately, not treated as application evidence |
+| `node --test tests/browser/playback.test.mjs` before playback fix | RED: dequeue slider moved without advancing canvas/code cursor |
+| Final `npm.cmd run check` | PASS: typecheck, existing lint, engine 31/31, workflow tests 13/13, frontend/server build, HTTP server tests 2/2 (46 core tests). Legacy APIs, definitions, graph traversal/editing/validation, empty and signed values pass in development and production modes |
+| Final `npm.cmd run test:browser` | PASS: 1 native-browser regression; repeated equally sized enqueue/dequeue traces keep slider, canvas and source synchronized (47 tests across core/browser suites) |
+| `node .local/definition-review.mjs` final run | PASS: all 37 operation flows completed. Empty/custom array choices and cached custom values, insertion regression, both linked compartment layouts and pointer references, all graph edits/traversals, synchronized source cursor, and single top-header playback verified |
+| Responsive/light/dark review | PASS: widths 1600, 1280, 1024, 834, 390 and 320px, both themes; no page-wide horizontal overflow. Playback stays at the top when the page scrolls; diagrams and code use local scrolling |
+| Sampled text contrast | PASS: 194 enabled/nondecorative text elements in each final theme view; no sampled normal-text 4.5:1 / large-text 3:1 failures |
+| Reduced-motion emulation | PASS: button transition `0.00001s`; panel animation name `none` |
+| Browser runtime | Final broad review reported no runtime exceptions; screenshots saved privately in `.local/definition-*.png` and reviewed for empty array, linked compartments, graph and mobile layout |
+| `npm.cmd audit --json --cache .local/npm-cache` | PASS: zero known vulnerabilities as of 2026-11-22; dependencies unchanged |
+| `git diff --check` | PASS; current changes remain local/uncommitted |
+| Final documentation/security consistency review | PASS: 23 local Markdown links resolve; credential-pattern candidates only in existing environment placeholders and synthetic privacy-test fixtures; no private/generated artifact candidates outside ignored trees; representative review/backup/build/cache paths are Git-ignored |
+
+### Status, files and limits
+
+- P08/P11 and the requested changes are VERIFIED within the operation/input/browser scope above. Updated README, curriculum/course map, feature inventory, project context, project-specific design rules and workflow summary.
+- Added the examples module, definition/graph engine tests, three focused UI components and the optional native-browser test/helper. Updated the existing engine/schema/CLI/server, app, canvas, shared types, CSS and HTTP tests. Existing stack, palette, APIs and package commands were preserved; only the optional browser command was added.
+- Each run still starts from the entered initial values, not a persistent container shared across operations. Graphs are bounded to 24 initial integer vertices and 48 edges; large traces retain the engine's 800-frame safeguard. Real-device, non-Chromium and screen-reader testing are not claimed; contrast sampling is not a full accessibility certification.
+- The existing user server was preserved. Restart `npm run dev` to load the updated graph API; isolated verification servers/browsers were stopped. No commit, push or deployment was requested/performed for this change. Final documentation/security consistency review passed within the scope above.
+
 ## 2026-11-21 — Initial GitHub publication preparation
 
 ### Request and acceptance criteria

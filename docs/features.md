@@ -11,9 +11,10 @@ Status and dated evidence live only in [the progress record](progress.md). This 
 | P05 | Simulation API and visual playback | API invokes Python; structure selection, parameters, playback, phase/step controls, inspector, and code highlight agree |
 | P06 | Themes, responsive UI, and keyboard controls | Existing visual conventions, narrow/wide layouts, accessible controls, theme switching, and documented shortcuts work |
 | P07 | Warm cream and sage palette | Reference-inspired centralized colors cover surfaces, controls, diagrams, and code; matching dark tokens, readable text, visible focus, and narrow-screen wrapping |
-| P08 | Six-topic Python learning workspace | 23 operations across arrays, singly/doubly linked lists, stacks, circular queues, BSTs and chained hash tables; explicit boundary errors |
+| P08 | Python learning workspace | 37 operations across seven topics: arrays, singly/doubly linked lists, stacks, circular queues, BSTs, chained hash tables and graphs; explicit boundary errors |
 | P09 | Synchronized side-by-side code | Actual operation line events, shared step cursor, source highlight and canvas state; desktop right-side panel and stacked mobile view |
 | P10 | Complexity and observed execution | Best/average/worst time, auxiliary/structure space, actual line-event count and explicit illustrative memory assumptions |
+| P11 | Initialization and top playback | Define first with empty/custom inputs, shared sticky-header playback, compartmentalized linked nodes, responsive transitions and reduced-motion support |
 | W01 | Reusable development instructions | Concise root rules; separate project context; discoverable TDD, planning, UI, security/cleanup, and explicit-push skills; summary maintained |
 | W02 | Aggregate quality gate | Existing scripts preserved; typecheck, existing lint, engine/workflow tests, and build run sequentially and propagate failure |
 | W03 | Conversation-local backup | Only active conversation visible text; internal records excluded; ignored local output; identity, privacy, failure, and live snapshot verification |

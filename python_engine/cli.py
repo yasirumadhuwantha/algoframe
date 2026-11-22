@@ -24,6 +24,8 @@ def main() -> int:
     parser.add_argument("--operation")
     parser.add_argument("--payload-value", type=int, default=99)
     parser.add_argument("--front-index", type=int, default=0)
+    parser.add_argument("--edges", default=None, help="JSON list of integer endpoint pairs")
+    parser.add_argument("--target-vertex", type=int, default=1)
     parser.add_argument("--insert-value", type=int, default=67)
     parser.add_argument("--insert-index", type=int, default=2)
     parser.add_argument("--capacity", type=int, default=6)
@@ -38,7 +40,9 @@ def main() -> int:
         try:
             trace = generate_learning_trace(args.structure, args.operation, values=parsed_values,
                                             value=args.insert_value, index=args.insert_index,
-                                            capacity=args.capacity, front=args.front_index, payload=args.payload_value)
+                                            capacity=args.capacity, front=args.front_index, payload=args.payload_value,
+                                            edges=json.loads(args.edges) if args.edges is not None else None,
+                                            target=args.target_vertex)
         except ValueError as error:
             print(str(error), file=sys.stderr)
             return 2
