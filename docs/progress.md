@@ -2,6 +2,92 @@
 
 This is the single status and evidence log. [Feature inventory](features.md) defines capability boundaries. Dates use Asia/Colombo time.
 
+## 2026-11-26 — Define-first guided flow, immediate canvas results, and student interactivity
+
+### Acceptance criteria
+
+- Require defining the data structure first (`Define (initial)`) before other operations can be selected or run; reset this gate when switching lessons.
+- Show the completed operation result immediately in the canvas when a user runs an operation, making step-by-step playback optional (Play/Step/Slider remain available to replay).
+- Simplify the form and canvas for DSA students: 2-step progress indicator, quick operation pills, one-click `"Try sample"` preset, plain-English step narration box, interactive slot/node inspection on click, and playback speed control (`0.5x`, `1x`, `2x`).
+- Write a focused failing browser test first (`tests/browser/define_first.test.mjs`) and pass the full `npm run check` and sequential browser suites.
+
+### Implementation and decisions
+
+- Added `isDefined` state in `src/App.tsx` (resetting to `false` on lesson change, unlocking when a user-triggered `define` run succeeds) and `speed` state (`0.5 | 1 | 2`).
+- Updated `load(params, isUserRun)` in `src/App.tsx` to jump `stepIndex` to `data.steps.length` (`COMPLETED`) when `isUserRun` is `true`, so results appear immediately on the canvas without requiring Play.
+- Updated `web/components/OperationForm.tsx` with a 2-step indicator, quick operation pills (locked until defined), disabled non-define `<option>` elements before definition, `"Redefine"` reset button, `"Try sample"` preset button, and concise student guidance.
+- Updated `web/components/PlaybackBar.tsx` with a cycleable `0.5×` / `1×` / `2×` speed button.
+- Updated `web/components/LearningCanvas.tsx` with a prominent step-narration box and clickable slot inspection (`selectedId`) showing value, role, and simulated memory address.
+- Added `syncLiveState` in `src/App.tsx` so sequential operations carry forward live structure values, graph edges, dynamic array capacity growth, and circular queue `frontIndex`, updating `Current values` / `Current edges` labels in `web/components/OperationForm.tsx`.
+- Removed the redundant `Operation` `<select>` dropdown in `web/components/OperationForm.tsx` in favor of accessible operation tabs (`role="tablist"` / `role="tab"`).
+- Added `MotionConfig reducedMotion="user"`, `AnimatePresence`, and `motion.div` spring layout transitions in `web/components/LearningCanvas.tsx` for smooth sliding/insertion/removal animations across arrays, queues, stacks, and linked lists.
+- Added `tests/browser/cumulative.test.mjs` and `tests/browser/define_first.test.mjs`, and updated `tests/browser/playback.test.mjs` to use the operation tabs and reset to Step 1 before testing `End`-key synchronization.
+
+### Actual verification results
+
+| Command / check | Observed result |
+| --- | --- |
+| `node --test tests/browser/define_first.test.mjs` before implementation | RED: non-define operations were enabled before defining |
+| `node --test tests/browser/cumulative.test.mjs` | PASS: sequential inserts retain prior values and show `COMPLETED` immediately (11.82s) |
+| `node --test --test-concurrency=1 tests/browser/define_first.test.mjs tests/browser/playback.test.mjs tests/browser/theme.test.mjs` | PASS: all 3 browser tests passed (12.06s, 14.16s, 11.48s) |
+| `npm.cmd run check` | PASS: typecheck, lint (`tsc --noEmit`), 31 Python engine tests, 13 workflow tests, Vite/esbuild build, 2 HTTP smoke tests |
+| `git diff --check` | PASS: zero whitespace/format errors |
+
+### Status, files and limits
+
+- P13 is VERIFIED within the scope above. Updated `src/App.tsx`, `web/components/OperationForm.tsx`, `web/components/PlaybackBar.tsx`, `web/components/LearningCanvas.tsx`, `tests/browser/playback.test.mjs`, `tests/browser/define_first.test.mjs`, `tests/browser/cumulative.test.mjs`, `docs/features.md`, and `docs/progress.md`.
+- No commit, push, or deployment was performed.
+
+## 2026-11-24 — Circular wave theme transition and interactive animations
+
+### Acceptance criteria
+
+- When toggling the theme switch button, smoothly expand the new theme outward from the button's click coordinates as an expanding circular bubble wave.
+- Utilize the View Transitions API (`document.startViewTransition`) with custom circular `clipPath` keyframes when supported, avoiding default crossfades for a crisp wave edge.
+- Provide graceful fallback for unsupported environments and automated/headless drivers, and honor `prefers-reduced-motion: reduce` by toggling immediately without animation.
+- Animate the theme button with smooth icon rotation, scale, and active feedback.
+- Adapt the complete light and dark theme to match the user-provided design reference:
+  - Crisp light mode surfaces (`#f8f9fa` background, `#ffffff` panels, `#e5e7eb` borders).
+  - Deep dark mode surfaces (`#111317` background, `#181a20` panels, `#252933` borders).
+  - Vibrant coral/terracotta primary accent (`#dc4e34` light / `#ea5e48` dark) applied to active navigation items, buttons, slider, breadcrumbs, and asterisk logo.
+  - Cyan badge accents for `Python 3`, `+ READY`, and `Active Line`.
+  - Visualizer array cards displaying filled coral cards for live values and charcoal cards for empty slots.
+- Enhance interactivity and visual responsiveness throughout the visualizer:
+  - Active algorithm nodes display a smooth pulse and sage/coral glow; verified nodes show an emerald glow.
+  - Graph vertices feature an active pulse ring during traversal (BFS/DFS).
+  - Play button exhibits a subtle breathing indicator while auto-playback is running.
+  - Buttons and interactive cards feature responsive hover lifts, active press scales, and smooth focus rings.
+- Maintain existing architecture, accessibility, contrast, and all test gates.
+
+### Implementation and decisions
+
+- Implemented circular bubble wave theme transition in `src/App.tsx` and `src/index.css` using `document.startViewTransition`. It calculates the click origin `(x, y)` and the maximum distance to viewport corners (`endRadius`), applying a synchronous `flushSync` DOM update and animating `::view-transition-new(root)` with `clipPath: circle(...)`.
+- Added disabled default crossfades (`animation: none; mix-blend-mode: normal;`) and proper z-indexing in `src/index.css` for sharp, clean wave edges.
+- Added automated/headless and `prefers-reduced-motion: reduce` safety checks to ensure instantaneous, reliable execution across test environments and accessibility preferences.
+- Overhauled color tokens in `src/index.css` to match the user's reference:
+  - Defined clean slate neutrals for both themes (`#f8f9fa` light / `#111317` dark).
+  - Updated primary accent ramp to terracotta/coral red (`#dc4e34` / `#ea5e48`).
+  - Added cyan token scale (`--color-cyan-*`) for status badges and live indicators.
+  - Updated stage surface and dot grid variables for both light and dark modes.
+  - Updated `.algo-primary` and `.algo-selected` component styles with white text and coral background.
+- Refined `LearningCanvas`, `LinkedNodeCard`, `PlaybackBar`, `OperationForm`, and `PythonCodeBox` to reflect the updated theme and interactive transitions.
+- Added `tests/browser/theme.test.mjs` to verify theme toggling, dark class manipulation, and button state in a native browser.
+
+### Actual verification results
+
+| Command / check | Observed result |
+| --- | --- |
+| `node --test tests/browser/theme.test.mjs` before implementation | RED: failing assertion verifying theme toggle hook |
+| `node --test tests/browser/theme.test.mjs` after implementation | PASS: 1 native-browser test; theme toggles to dark and returns to light cleanly (5433ms) |
+| `npm.cmd run test:browser` | PASS: 1 native-browser playback regression; slider and code synchronization verified (7856ms) |
+| `npm.cmd run check` | PASS: typecheck, lint (tsc), 31 Python engine tests, 13 workflow tests, frontend and server build, 2 HTTP smoke tests (46 core tests) |
+| `git diff --check` | PASS: zero whitespace or format errors across modified files |
+
+### Status, files and limits
+
+- P06, P07, P11, and P12 are VERIFIED within the scope above. Updated `src/App.tsx`, `src/index.css`, `web/components/LearningCanvas.tsx`, `web/components/LinkedNodeCard.tsx`, `web/components/OperationForm.tsx`, `web/components/PlaybackBar.tsx`, `web/components/PythonCodeBox.tsx`, `tests/browser/theme.test.mjs`, `docs/features.md`, and `docs/progress.md`.
+- No deployment or remote push was performed.
+
 ## 2026-11-22 — Initialization and graph workspace push preparation
 
 - The user explicitly requested pushing the pending work. Current branch/upstream: `master` / `origin/master`; origin matches `https://github.com/yasirumadhuwantha/algoframe.git`. The remote tip matches the existing local base at inspection, with no divergence requiring history changes.

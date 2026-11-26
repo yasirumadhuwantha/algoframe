@@ -23,17 +23,20 @@ test('native slider End stays synchronized across equally sized operation traces
     browser = await openBrowser();
     await browser.call('Page.navigate', { url: `http://127.0.0.1:${port}` });
     const ready = () => until(() => browser.evaluate(`!!document.querySelector('[aria-label="Algorithm visualization"]') && document.querySelector('[aria-label="Execution step"]').value === '1' && document.querySelector('[aria-label="Algorithm visualization"]').textContent.includes('READY')`), 'Trace did not become ready');
+    const completed = () => until(() => browser.evaluate(`!!document.querySelector('[aria-label="Algorithm visualization"]') && document.querySelector('[aria-label="Algorithm visualization"]').textContent.includes('COMPLETED')`), 'Trace did not complete');
     await ready();
     await browser.evaluate(`[...document.querySelectorAll('nav button')].find(e => e.textContent.includes('Queues')).click()`);
     await ready();
     await browser.evaluate(`document.querySelector('input[name="definition"][value="custom"]').click()`);
     await browser.evaluate(`document.querySelector('form button[type="submit"]').click()`);
-    await ready();
+    await completed();
     let previousTotal;
     for (const operation of ['enqueue', 'dequeue', 'enqueue', 'dequeue']) {
-      await browser.evaluate(`(()=>{const select=document.querySelector('select');select.value='${operation}';select.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+      await browser.evaluate(`document.querySelector('button[data-operation="${operation}"]').click()`);
       await browser.evaluate(`document.querySelector('form button[type="submit"]').click()`);
-      await ready(); await wait(100);
+      await completed(); await wait(100);
+      await browser.evaluate(`document.querySelector('button[aria-label="Reset to first step"]').click()`);
+      await ready();
       const total = await browser.evaluate(`Number(document.querySelector('[aria-label="Execution step"]').max)`);
       if (previousTotal !== undefined) assert.equal(total, previousTotal, 'Regression requires equally sized traces');
       previousTotal = total;

@@ -1,32 +1,46 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Warm neutral ramp keeps existing surface/text utilities consistent across the app. */
+/* Clean modern palette aligned with the requested AlgoFrame theme. */
 @theme {
-  --color-white: #fbf7f1;
-  --color-slate-50: #fbf7f1;
-  --color-slate-100: #f4ebe0;
-  --color-slate-200: #ded4c5;
-  --color-slate-300: #c2b7a7;
-  --color-slate-400: #6c6253;
-  --color-slate-500: #62594d;
-  --color-slate-600: #574e43;
-  --color-slate-700: #443c33;
-  --color-slate-800: #332e28;
-  --color-slate-900: #24211c;
-  --color-slate-950: #1d1b18;
+  --color-white: #ffffff;
+  --color-slate-50: #ffffff;
+  --color-slate-100: #f8f9fa;
+  --color-slate-200: #e5e7eb;
+  --color-slate-300: #d1d5db;
+  --color-slate-400: #9ca3af;
+  --color-slate-500: #6b7280;
+  --color-slate-600: #4b5563;
+  --color-slate-700: #374151;
+  --color-slate-800: #1f242d;
+  --color-slate-900: #181a20;
+  --color-slate-950: #111317;
 
-  --color-sage-50: #f1f5e9;
-  --color-sage-100: #e7efd9;
-  --color-sage-200: #cfe3b2;
-  --color-sage-300: #bad397;
-  --color-sage-400: #8da96c;
-  --color-sage-500: #6e8b4d;
-  --color-sage-600: #526c38;
-  --color-sage-700: #40562c;
-  --color-sage-800: #344525;
-  --color-sage-900: #2b3921;
-  --color-sage-950: #1d2818;
+  /* Primary accent: vibrant terracotta/coral red */
+  --color-sage-50: #fef2f0;
+  --color-sage-100: #fee4e0;
+  --color-sage-200: #fecbc2;
+  --color-sage-300: #fca898;
+  --color-sage-400: #f77a64;
+  --color-sage-500: #ea5e48;
+  --color-sage-600: #dc4e34;
+  --color-sage-700: #b93b24;
+  --color-sage-800: #983320;
+  --color-sage-900: #7e2f1f;
+  --color-sage-950: #44140c;
+
+  /* Secondary badge / status accent: cyan / sky */
+  --color-cyan-50: #f0f9ff;
+  --color-cyan-100: #e0f2fe;
+  --color-cyan-200: #bae6fd;
+  --color-cyan-300: #7dd3fc;
+  --color-cyan-400: #38bdf8;
+  --color-cyan-500: #0ea5e9;
+  --color-cyan-600: #0284c7;
+  --color-cyan-700: #0369a1;
+  --color-cyan-800: #075985;
+  --color-cyan-900: #0c4a6e;
+  --color-cyan-950: #082f49;
 
   --color-lavender-50: #f6f2fa;
   --color-lavender-100: #e7ddf5;
@@ -76,8 +90,8 @@
   --color-rose-900: #572b24;
   --color-rose-950: #361a16;
 
-  --shadow-xs: 0 1px 2px rgb(58 44 28 / 0.08);
-  --shadow-lg: 0 8px 24px rgb(58 44 28 / 0.12);
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.05);
+  --shadow-lg: 0 8px 24px rgb(0 0 0 / 0.12);
 }
 
 @layer base {
@@ -85,31 +99,31 @@
     --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
     --font-sans: 'DM Sans', system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-    --stage-surface: #f7efe4;
-    --stage-grid: rgb(152 131 100 / 0.22);
-    --diagram-edge: #817461;
-    --diagram-edge-active: #526c38;
+    --stage-surface: #ffffff;
+    --stage-grid: rgb(156 163 175 / 0.16);
+    --diagram-edge: #9ca3af;
+    --diagram-edge-active: #dc4e34;
     color-scheme: light;
   }
 
   .dark {
-    --color-slate-50: #fbf7ee;
-    --color-slate-100: #eeeadd;
-    --color-slate-200: #d9d6c8;
-    --color-slate-300: #c8c1b2;
-    --color-slate-400: #b0a592;
-    --color-slate-500: #a09683;
-    --color-slate-600: #998e79;
-    --color-slate-700: #575343;
-    --color-slate-800: #3e4436;
-    --color-slate-900: #292e24;
-    --color-slate-950: #1c211a;
-    --color-sage-400: #b1ce8f;
-    --color-sage-500: #98b978;
-    --stage-surface: #22271e;
-    --stage-grid: rgb(183 193 156 / 0.14);
-    --diagram-edge: #a89b84;
-    --diagram-edge-active: #b1ce8f;
+    --color-slate-50: #f9fafb;
+    --color-slate-100: #f3f4f6;
+    --color-slate-200: #e5e7eb;
+    --color-slate-300: #d1d5db;
+    --color-slate-400: #9ca3af;
+    --color-slate-500: #6b7280;
+    --color-slate-600: #4b5563;
+    --color-slate-700: #333742;
+    --color-slate-800: #252934;
+    --color-slate-900: #191b22;
+    --color-slate-950: #111317;
+    --color-sage-400: #f87d69;
+    --color-sage-500: #ea5e48;
+    --stage-surface: #14161c;
+    --stage-grid: rgb(148 163 184 / 0.12);
+    --diagram-edge: #4b5563;
+    --diagram-edge-active: #ea5e48;
     color-scheme: dark;
   }
 
@@ -133,49 +147,64 @@
   }
 
   button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
-    outline: 2px solid var(--color-sage-700);
+    outline: 2px solid var(--color-sage-600);
     outline-offset: 3px;
   }
 
   .dark :is(button, input, select, a):focus-visible {
-    outline-color: var(--color-sage-300);
+    outline-color: var(--color-sage-400);
   }
 
   ::selection {
     background: var(--color-sage-200);
-    color: #1d1b18;
+    color: #111317;
   }
 }
 
 @layer components {
   .algo-primary {
-    border: 1px solid var(--color-slate-800);
-    background: var(--color-sage-200);
-    color: #1d1b18;
-    box-shadow: 0 2px 0 var(--color-slate-800);
+    border: 1px solid #b93b24;
+    background: #dc4e34;
+    color: #ffffff !important;
+    box-shadow: 0 1px 2px rgb(220 78 52 / 0.2);
   }
 
   button.algo-primary:hover:not(:disabled) {
-    background: var(--color-sage-300);
+    background: #c53f27;
     transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgb(220 78 52 / 0.3);
   }
 
   button.algo-primary:active:not(:disabled) {
+    background: #b13721;
     transform: translateY(0);
     box-shadow: none;
   }
 
+  .dark .algo-primary {
+    border-color: #dc4e34;
+    background: #ea5e48;
+    color: #ffffff !important;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.4);
+  }
+
+  .dark button.algo-primary:hover:not(:disabled) {
+    background: #f06c57;
+    box-shadow: 0 4px 12px rgb(234 94 72 / 0.4);
+  }
+
   .algo-selected {
-    border-color: var(--color-sage-700);
-    background: var(--color-sage-200);
-    color: #1d1b18;
-    box-shadow: 0 1px 0 var(--color-sage-700);
+    border-color: #dc4e34;
+    background: #dc4e34;
+    color: #ffffff !important;
+    box-shadow: 0 2px 4px rgb(220 78 52 / 0.25);
   }
 
   .dark .algo-selected {
-    border-color: var(--color-sage-400);
-    background: var(--color-sage-900);
-    color: var(--color-sage-100);
+    border-color: #ea5e48;
+    background: #ea5e48;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgb(234 94 72 / 0.35);
   }
 }
 
@@ -183,8 +212,67 @@
   top: calc(var(--app-header-height, 120px) + 16px);
 }
 
+/* Circular wave view transitions */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+}
+
 .algo-node {
-  transition: background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease, color 160ms ease;
+  transition: background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease, color 160ms ease, transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.algo-node:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px -2px rgb(58 44 28 / 0.12);
+}
+
+.dark .algo-node:hover {
+  box-shadow: 0 4px 12px -2px rgb(0 0 0 / 0.35);
+}
+
+.algo-node-active {
+  border-color: var(--color-sage-600) !important;
+  background-color: var(--color-sage-100) !important;
+  box-shadow: 0 0 0 2px rgba(110, 139, 77, 0.4), 0 4px 12px rgba(110, 139, 77, 0.2) !important;
+  transform: scale(1.025);
+  animation: algo-active-pulse 2s ease-in-out infinite;
+}
+
+.dark .algo-node-active {
+  border-color: var(--color-sage-400) !important;
+  background-color: var(--color-sage-950) !important;
+  box-shadow: 0 0 0 2px rgba(177, 206, 143, 0.35), 0 4px 12px rgba(0, 0, 0, 0.45) !important;
+}
+
+.algo-node-verified {
+  border-color: var(--color-emerald-500) !important;
+  background-color: var(--color-emerald-50) !important;
+  box-shadow: 0 0 0 2px rgba(102, 136, 77, 0.35) !important;
+}
+
+.dark .algo-node-verified {
+  border-color: var(--color-emerald-400) !important;
+  background-color: var(--color-emerald-950) !important;
+  box-shadow: 0 0 0 2px rgba(140, 172, 107, 0.3) !important;
+}
+
+@keyframes algo-active-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 2px rgba(110, 139, 77, 0.35), 0 2px 8px rgba(110, 139, 77, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(110, 139, 77, 0.5), 0 4px 14px rgba(110, 139, 77, 0.25);
+  }
 }
 
 .algo-panel-enter {
@@ -208,5 +296,17 @@
     animation-duration: 0.01ms !important;
     animation-name: none !important;
     scroll-behavior: auto !important;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+  .algo-node-active {
+    animation: none !important;
+    transform: none !important;
+  }
+  .algo-node:hover {
+    transform: none !important;
   }
 }

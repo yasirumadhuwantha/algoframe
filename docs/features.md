@@ -15,6 +15,8 @@ Status and dated evidence live only in [the progress record](progress.md). This 
 | P09 | Synchronized side-by-side code | Actual operation line events, shared step cursor, source highlight and canvas state; desktop right-side panel and stacked mobile view |
 | P10 | Complexity and observed execution | Best/average/worst time, auxiliary/structure space, actual line-event count and explicit illustrative memory assumptions |
 | P11 | Initialization and top playback | Define first with empty/custom inputs, shared sticky-header playback, compartmentalized linked nodes, responsive transitions and reduced-motion support |
+| P12 | Circular wave theme transition and interactive visual effects | Expanding circular bubble wave for dark/light theme toggle, icon transitions, active node pulse glow, interactive states and reduced-motion fallback |
+| P13 | Guided define-first student workflow and immediate visualization | Two-step define-first gate per lesson, operation tabs, sample presets, immediate completed canvas state on run, cumulative live state across operations, motion layout animations, interactive slot inspection, and playback speed control |
 | W01 | Reusable development instructions | Concise root rules; separate project context; discoverable TDD, planning, UI, security/cleanup, and explicit-push skills; summary maintained |
 | W02 | Aggregate quality gate | Existing scripts preserved; typecheck, existing lint, engine/workflow tests, and build run sequentially and propagate failure |
 | W03 | Conversation-local backup | Only active conversation visible text; internal records excluded; ignored local output; identity, privacy, failure, and live snapshot verification |

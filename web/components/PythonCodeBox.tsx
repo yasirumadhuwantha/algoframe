@@ -118,11 +118,8 @@ export const PythonCodeBox: React.FC<PythonCodeBoxProps> = ({
           <span className="truncate font-mono text-xs font-semibold text-slate-800 dark:text-slate-100">
             {filename}
           </span>
-          <span className="text-slate-300 dark:text-slate-700" aria-hidden="true">
-            ·
-          </span>
-          <span className="whitespace-nowrap font-mono text-xs text-sage-700 dark:text-sage-400">
-            Active Line {activeLine}
+          <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2 py-0.5 font-mono text-[10px] font-semibold text-cyan-700 dark:border-cyan-800/80 dark:bg-cyan-950/70 dark:text-cyan-300">
+            Active Line
           </span>
         </div>
 
