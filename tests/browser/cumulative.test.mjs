@@ -36,6 +36,7 @@ test('operations carry forward live state across sequential runs', { timeout: 60
     browser = await openBrowser();
     await browser.call('Page.navigate', { url: `http://127.0.0.1:${port}` });
     await until(() => browser.evaluate(`!!document.querySelector('[aria-label="Algorithm visualization"]') && document.querySelector('[aria-label="Algorithm visualization"]').textContent.includes('READY')`), 'Initial trace did not load');
+    await browser.evaluate(`document.querySelector('[data-mode="explore"]').click()`);
 
     // Step 1: Define empty array
     await browser.evaluate(`document.querySelector('form button[type="submit"]').click()`);

@@ -2,6 +2,59 @@
 
 This is the single status and evidence log. [Feature inventory](features.md) defines capability boundaries. Dates use Asia/Colombo time.
 
+## 2026-11-28 — Explicit push review
+
+- Scope: commit all 23 reviewed playground source, test, design-guidance and documentation files, then push the existing `master` branch to its configured `origin/master` upstream. The user explicitly authorized this push after local implementation; deployment remains outside scope.
+- Fetched `origin` successfully and confirmed no divergence before committing. No unrelated changes, pending deletions, dependency additions or lockfile changes found.
+- Fresh `npm.cmd run check`: PASS (typecheck, lint, 31 engine tests, 13 workflow tests, frontend/server build, 2 HTTP smoke tests). Fresh `npm.cmd run test:browser`: PASS, all 8 tests, including every example/preset and the final key-step navigation regression.
+- Fresh `npm.cmd audit --json --cache .local/npm-cache`: PASS, zero known vulnerabilities. Limited credential-pattern review found no matches in the 23 pending files; all 13 local Markdown links resolve.
+- Existing responsive/keyboard/reduced-motion evidence and its explicit platform limits remain documented below. Screenshots/npm caches remain ignored; tracked private/generated-file candidates contain only the existing `.env.example` template. Retained uncertain legacy assets/components.
+- All required pre-push verification passed. The reviewed files are ready for staging, commit and push; remote outcome is reported with the resulting commit at handoff.
+
+## 2026-11-28 — Interactive playground redesign
+
+### Acceptance criteria
+
+- One-click examples and explicit empty/custom setup remain available across all eight lessons; the canvas leads the workspace and code, inputs, variables, and complexity details are disclosed on demand.
+- Learn automatically plays meaningful trace changes from the initial state; concept and Python-line navigation, speed, pause, replay, and scrubbing share one cursor. Explore retains immediate results. Reduced motion is honored.
+- Canvas selection supports array editing, insertion gaps, linked/tree node actions, and selecting graph endpoints to connect them. All direct actions have labeled keyboard controls and use the existing validated Python API.
+- Predict pauses before revealing the result, offers deterministic questions with retry and explanation, and resumes the same trace after answering or skipping.
+- Every lesson has runnable edge-case experiments; array/list front-insertion comparison uses real engine traces and distinguishes observed events from asymptotic costs.
+- Verify focused browser failures before implementation, related browser regressions, the aggregate quality gate, responsive light/dark layouts, reduced motion, and security/cleanup review. Record missing evidence explicitly.
+
+### Scope and decisions
+
+- Baseline Git working tree is clean. Preserve React/TypeScript, Tailwind, Motion, Express and Python, all operations, and existing source synchronization. No dependency additions planned.
+- The current UI source uses neutral/coral/cyan tokens, superseding older warm-palette guidance; retain the current tokens rather than introduce a palette migration.
+- User-authorized guided playback supersedes the previous final-frame default in Learn/Predict; Explore keeps the quick final-state interaction.
+- Implemented one-click setup, compact operation controls, Learn/Explore/Predict modes, shared key-step/line navigation, optional source/analysis/variables, and narration derived from actual snapshots. Completed metadata replaces frontend guesses when carrying values, graph edges, capacity, and queue front into later runs.
+- Added direct array edits and insertion gaps, linked/tree actions, selectable graph endpoints and real edge updates, animated element copies/reference paths/tree/graph focus, stack entry/exit, and circular queue front/rear markers. No engine or API contract changes.
+- Added deterministic prediction questions with retry, explanation, explicit reveal, keyboard focus, and locked playback. Added sixteen runnable presets and real array/list front-insertion comparison. Comparison explains the spare-slot assumption and distinguishes element moves from runtime.
+- Existing browser regression expectations now select Explore for immediate results and explicitly reveal Python/line mode when testing source synchronization. Operation choices use native pressed buttons rather than incomplete ARIA tabs. All browser suites are available through the existing browser command; added an optional visual-evidence command.
+- Updated current theme/design guidance, workflow summary, project context, feature inventory and README. Implementation was verified locally before the subsequent explicit push request; earlier progress entries remain unchanged.
+
+### Actual verification
+
+| Check | Result |
+| --- | --- |
+| Baseline `npm.cmd test` | PASS: 31 engine and 13 workflow tests |
+| New `node --test tests/browser/playground.test.mjs` before implementation | RED: missing runnable example, prediction and comparison controls |
+| Focused browser suite after implementation | PASS: examples, autoplay/pause, fewer concept steps, synchronized Python, canvas editing and cumulative insertion, moving array copy, prediction retry/reveal/keyboard lock, capacity growth, graph connection/reset/disconnected traversal, real comparison and reduced motion |
+| Sequential six-file browser run | PASS: 8 tests, including initialization, cumulative state, equally sized trace slider End regression, theme toggle, all eight examples, all sixteen presets, full-stack rejection/recovery and empty-queue rejection. No unexpected runtime exceptions in new browser sessions |
+| Additional navigation regression from final review | RED: switching from a housekeeping line to key steps skipped the next visible change (Python line 11 instead of 10). Fixed button navigation to select the nearest actual next/previous key step, matching playback and keyboard behavior |
+| Focused `node --test --test-name-pattern="one-click" tests/browser/playground.test.mjs` after navigation fix | PASS: key-step transition visits Python line 10 before the copy at line 11; actual copy motion, source synchronization, canvas editing and cumulative insertion still pass |
+| Final `npm.cmd run check` | PASS: typecheck, lint, 31 engine tests, 13 workflow tests, frontend/server build and 2 development/production HTTP smoke tests |
+| `npm.cmd audit --json --cache .local/npm-cache` | PASS on 2026-11-28: zero known advisories across 270 reported dependencies; no dependency versions or lockfile changes |
+| `npm.cmd run test:browser:visual` | PASS: Edge 158.0.4370.45, all 8 topics at 390×1000, 768×1000 and 1440×1000 in both themes. Captured 48 responsive screenshots plus prediction/Python view in ignored `.local/ui-review/`; no page-wide horizontal overflow. Keyboard Tab reaches challenge answers with a solid focus outline; accessibility tree has no unnamed visible buttons; Python appears below the phone canvas and beside the desktop canvas; reduced-motion media preference verified |
+| Manual screenshot inspection | Reviewed representative array, list, stack, queue, tree, graph and prediction/source views. Compacted phone operations, collapsed custom setup, improved small graph/tree fit, retained local scrolling for long diagrams, and checked final prediction contrast after entry animation |
+| Cleanup/security/documentation review | Reviewed 23 pending files and input/fetch boundaries; server subprocess allowlist/time/output limits unchanged. Limited credential-pattern scan found no matches; 13 local Markdown links resolve. Tracked artifact candidates contain only the existing `.env.example`; screenshots/cache are ignored. No uncertain legacy components/assets/dependencies removed. `git diff --check` passes |
+
+### Scope limits
+
+- Browser evidence is from local headless Edge; Firefox/Safari, physical touch devices, actual screen-reader use and human learning outcomes have not been established. Native browser zoom was not exercised. Long chains/large diagrams intentionally scroll inside the canvas.
+- No authentication, persistence, new algorithm families, arbitrary-code execution, or deployment added. Existing Python input/resource limits remain in effect. Modeled memory and element moves remain educational, not runtime benchmarks.
+- P13–P16 are VERIFIED within the acceptance and browser scope above. No required implementation or check remains pending; the platform/accessibility/usability limits above remain explicit.
+
 ## 2026-11-26 — Define-first guided flow, immediate canvas results, and student interactivity
 
 ### Acceptance criteria

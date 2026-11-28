@@ -28,8 +28,10 @@ export async function openBrowser() {
     await new Promise((resolve, reject) => { socket.onopen = resolve; socket.onerror = reject; });
     let sequence = 0;
     const pending = new Map();
+    const errors = [];
     socket.onmessage = ({ data }) => {
       const response = JSON.parse(data);
+      if (response.method === 'Runtime.exceptionThrown') errors.push(response.params.exceptionDetails.exception?.description ?? response.params.exceptionDetails.text);
       const callback = pending.get(response.id);
       if (!callback) return;
       pending.delete(response.id);
@@ -39,8 +41,10 @@ export async function openBrowser() {
       const id = ++sequence; pending.set(id, { resolve, reject }); socket.send(JSON.stringify({ id, method, params }));
     });
     await call('Page.enable');
+    await call('Runtime.enable');
     return {
       call,
+      errors,
       async evaluate(expression) {
         const result = await call('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true });
         if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description ?? result.exceptionDetails.text);

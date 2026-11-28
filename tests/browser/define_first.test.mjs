@@ -37,13 +37,14 @@ test('define must be completed before other operations unlock, and resets per le
     await browser.call('Page.navigate', { url: `http://127.0.0.1:${port}` });
     const ready = () => until(() => browser.evaluate(`!!document.querySelector('[aria-label="Algorithm visualization"]') && document.querySelector('[aria-label="Algorithm visualization"]').textContent.includes('READY')`), 'Trace did not become ready');
     await ready();
+    await browser.evaluate(`document.querySelector('[data-mode="explore"]').click()`);
 
     // Before defining, non-define operation tabs must be disabled
     const lockedBeforeDefine = await browser.evaluate(`
       (() => {
         const defineTab = document.querySelector('button[data-operation="define"]');
         const insertTab = document.querySelector('button[data-operation="insert"]');
-        return defineTab?.getAttribute('aria-selected') === 'true' && !!insertTab && insertTab.disabled === true;
+        return defineTab?.getAttribute('aria-pressed') === 'true' && !!insertTab && insertTab.disabled === true;
       })()
     `);
     assert.equal(lockedBeforeDefine, true, 'Non-define operations should be disabled before defining structure');
@@ -69,7 +70,7 @@ test('define must be completed before other operations unlock, and resets per le
       (() => {
         const defineTab = document.querySelector('button[data-operation="define"]');
         const pushTab = document.querySelector('button[data-operation="push"]');
-        return defineTab?.getAttribute('aria-selected') === 'true' && !!pushTab && pushTab.disabled === true;
+        return defineTab?.getAttribute('aria-pressed') === 'true' && !!pushTab && pushTab.disabled === true;
       })()
     `);
     assert.equal(lockedOnNewLesson, true, 'Switching lessons should require defining the new structure first');

@@ -1,65 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { Code2, Moon, Sun, Asterisk } from 'lucide-react';
+import { Asterisk, ArrowRight, BookOpen, Brain, Code2, FlaskConical, Moon, MousePointerClick, Sparkles, Sun, ArrowRightLeft } from 'lucide-react';
 import { PythonCodeBox } from '../web/components/PythonCodeBox';
 import { LearningCanvas } from '../web/components/LearningCanvas';
 import { ComplexityPanel } from '../web/components/ComplexityPanel';
 import { OperationForm } from '../web/components/OperationForm';
 import { PlaybackBar } from '../web/components/PlaybackBar';
+import { PredictionCard } from '../web/components/PredictionCard';
+import { ComparisonLab } from '../web/components/ComparisonLab';
 import { LESSONS } from '../web/data/curriculum';
 import type { Lesson } from '../web/data/curriculum';
+import { conceptFrames, describeStep, exampleParams, experimentsFor, makePrediction, nextOperation } from '../web/data/playground';
+import type { ExperienceMode, Prediction, StepMode } from '../web/data/playground';
 import type { SimulationParams, SimulationTrace } from '../web/types/traceTypes';
-
-function syncLiveState(data: SimulationTrace, params: SimulationParams) {
-  const lastStep = data.steps[data.steps.length - 1];
-  if (!lastStep) return null;
-  const op = params.operation;
-  const prevValues = params.values ?? [];
-
-  if (data.structure === 'queue') {
-    const cap = lastStep.nodes.length || 1;
-    const front = typeof lastStep.variables?.front === 'number' ? lastStep.variables.front : (params.frontIndex ?? 0);
-    const size = typeof lastStep.variables?.size === 'number' ? lastStep.variables.size : lastStep.nodes.filter(n => n.val !== null).length;
-    const nextValues: number[] = [];
-    for (let i = 0; i < size; i++) {
-      const slot = lastStep.nodes[(front + i) % cap];
-      if (slot && slot.val !== null && slot.val !== undefined) nextValues.push(Number(slot.val));
-    }
-    return { values: nextValues, frontIndex: front };
-  }
-
-  if (data.structure === 'binary_tree' || data.structure === 'hash_table') {
-    if (op === 'insert' && typeof params.insertValue === 'number') {
-      return { values: prevValues.includes(params.insertValue) ? prevValues : [...prevValues, params.insertValue] };
-    }
-    if (op === 'delete' && typeof params.insertValue === 'number') {
-      return { values: prevValues.filter(v => v !== params.insertValue) };
-    }
-    return { values: prevValues };
-  }
-
-  if (data.structure === 'graph') {
-    const idToVal = new Map(lastStep.nodes.map(n => [n.id, Number(n.val)]));
-    const nextValues = lastStep.nodes.map(n => Number(n.val));
-    const seen = new Set<string>();
-    const nextEdges: string[] = [];
-    for (const edge of lastStep.edges) {
-      const u = idToVal.get(edge.from_id);
-      const v = edge.to_id ? idToVal.get(edge.to_id) : undefined;
-      if (u === undefined || v === undefined) continue;
-      const key = u <= v ? `${u}-${v}` : `${v}-${u}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        nextEdges.push(key);
-      }
-    }
-    return { values: nextValues, edgesText: nextEdges.join(', ') };
-  }
-
-  const nextValues = lastStep.nodes.filter(n => n.val !== null && n.val !== undefined).map(n => Number(n.val));
-  const nextCapacity = data.structure === 'dynamic_array' && lastStep.nodes.length > (params.capacity ?? 0) ? lastStep.nodes.length : undefined;
-  return { values: nextValues, capacity: nextCapacity };
-}
 
 export default function App() {
   const [lesson, setLesson] = useState<Lesson>(LESSONS[0]);
@@ -75,14 +28,22 @@ export default function App() {
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState<0.5 | 1 | 2>(1);
   const [isDefined, setIsDefined] = useState(false);
-  const [showCode, setShowCode] = useState(true);
+  const [showCode, setShowCode] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
+  const [mode, setMode] = useState<ExperienceMode>('learn');
+  const modeRef = useRef(mode); modeRef.current = mode;
+  const [stepMode, setStepMode] = useState<StepMode>('concepts');
+  const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [dark, setDark] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [experimentNote, setExperimentNote] = useState('');
   const controller = useRef<AbortController | null>(null);
   const codeRef = useRef<HTMLElement | null>(null);
   const headerRef = useRef<HTMLElement | null>(null);
+  const operationRef = useRef<HTMLDivElement | null>(null);
   const step = trace?.steps[stepIndex - 1];
+  const frames = useMemo(() => trace ? stepMode === 'concepts' ? conceptFrames(trace) : trace.steps.map(s => s.step_index) : [1], [trace, stepMode]);
 
   useEffect(() => { document.documentElement.classList.toggle('dark', dark); }, [dark]);
   useEffect(() => {
@@ -93,218 +54,175 @@ export default function App() {
     measure(); observer.observe(header);
     return () => observer.disconnect();
   }, []);
-
-  const load = useCallback(async (params: SimulationParams, isUserRun = false) => {
+  const load = useCallback(async (params: SimulationParams, intent: 'preview' | 'setup' | 'run' = 'run') => {
     controller.current?.abort();
-    const request = new AbortController();
-    controller.current = request;
-    setLoading(true); setError(null); setPlaying(false); setTrace(null);
+    const request = new AbortController(); controller.current = request;
+    setLoading(true); setError(null); setPlaying(false); setPrediction(null);
     try {
-      const response = await fetch('/api/simulate', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(params), signal: request.signal,
-      });
-      const data = await response.json();
+      const response = await fetch('/api/simulate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params), signal: request.signal });
+      const data = await response.json() as SimulationTrace & { error?: string };
       if (!response.ok) throw new Error(data.error || 'Unable to run this operation');
-      if (!data.analysis || data.metadata?.operation !== params.operation) throw new Error('Restart npm run dev to load the updated Python learning API.');
-      if (!request.signal.aborted) {
-        setTrace(data);
-        setStepIndex(isUserRun ? data.steps.length : 1);
-        setExecutionId(value => value + 1);
-        if (isUserRun) {
-          if (params.operation === 'define') setIsDefined(true);
-          const synced = syncLiveState(data, params);
-          if (synced) {
-            const nextText = synced.values.join(', ');
-            setValuesText(nextText);
-            customValues.current = nextText;
-            if (synced.edgesText !== undefined) {
-              setEdgesText(synced.edgesText);
-              customEdges.current = synced.edgesText;
-            }
-            if (synced.capacity !== undefined || synced.frontIndex !== undefined) {
-              setDraft(prev => ({
-                ...prev,
-                ...(synced.capacity !== undefined ? { capacity: synced.capacity } : {}),
-                ...(synced.frontIndex !== undefined ? { frontIndex: synced.frontIndex } : {}),
-              }));
-            }
-            if (synced.values.length > 0) setDefinitionMode('custom');
-          }
-        }
+      if (!data.analysis || data.metadata?.operation !== params.operation || !data.steps?.length) throw new Error('Restart npm run dev to load the updated Python learning API.');
+      if (request.signal.aborted) return;
+      setTrace(data); setExecutionId(value => value + 1);
+      const quick = intent === 'setup' || modeRef.current === 'explore';
+      const challenge = intent === 'run' && modeRef.current === 'predict' ? makePrediction(params, data) : null;
+      setPrediction(challenge);
+      setStepIndex(intent === 'preview' || challenge ? 1 : quick ? data.steps.length : 1);
+      setPlaying(intent === 'run' && !quick && !challenge && data.steps.length > 1);
+      if (intent !== 'preview') {
+        setIsDefined(true);
+        const nextText = (data.metadata.final_values as number[]).join(', ');
+        setValuesText(nextText); customValues.current = nextText; setDefinitionMode('custom');
+        const nextEdges = (data.metadata.edges as number[][] | undefined)?.map(([u, v]) => `${u}-${v}`).join(', ');
+        if (nextEdges !== undefined) { setEdgesText(nextEdges); customEdges.current = nextEdges; }
+        setDraft(prev => ({ ...prev,
+          ...(typeof data.metadata.capacity === 'number' ? { capacity: data.metadata.capacity } : {}),
+          ...(typeof data.metadata.front === 'number' ? { frontIndex: data.metadata.front } : {}),
+        }));
       }
-    } catch (e) {
-      if (!request.signal.aborted) setError(e instanceof Error ? e.message : 'Unable to load the operation');
-    } finally { if (!request.signal.aborted) setLoading(false); }
+    } catch (e) { if (!request.signal.aborted) setError(e instanceof Error ? e.message : 'Unable to load the operation'); }
+    finally { if (!request.signal.aborted) setLoading(false); }
   }, []);
-
-  useEffect(() => { void load(LESSONS[0].defaults); return () => controller.current?.abort(); }, [load]);
+  useEffect(() => { void load(LESSONS[0].defaults, 'preview'); return () => controller.current?.abort(); }, [load]);
   useEffect(() => {
-    if (!playing || !trace) return;
-    const timer = window.setInterval(() => setStepIndex(current => {
-      if (current >= trace.steps.length) { setPlaying(false); return current; }
-      return current + 1;
-    }), Math.round(1100 / speed));
-    return () => window.clearInterval(timer);
-  }, [playing, trace, speed]);
+    if (!playing || !trace || prediction) return;
+    if (stepIndex >= trace.steps.length) { setPlaying(false); return; }
+    const timer = window.setTimeout(() => setStepIndex(frames.find(index => index > stepIndex) ?? trace.steps.length), Math.round(900 / speed));
+    return () => window.clearTimeout(timer);
+  }, [playing, trace, speed, frames, stepIndex, prediction]);
+  const navigate = (next: number) => {
+    if (prediction || loading || !trace) return;
+    setPlaying(false); setStepIndex(Math.max(1, Math.min(trace.steps.length, next)));
+  };
+  const togglePlayback = () => {
+    if (prediction || loading || !trace) return;
+    if (stepIndex === trace.steps.length) setStepIndex(1);
+    setPlaying(value => !value);
+  };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest('input, textarea, select, button, [contenteditable="true"]')) return;
+      if ((e.target as HTMLElement).closest('input, textarea, select, button, summary, [contenteditable="true"]')) return;
       if (e.key.toLowerCase() === 'c') { e.preventDefault(); setShowCode(value => !value); }
       else if (trace && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
-        e.preventDefault(); setPlaying(false);
-        setStepIndex(value => Math.max(1, Math.min(trace.steps.length, value + (e.key === 'ArrowRight' ? 1 : -1))));
-      } else if (trace && e.key === ' ') {
-        e.preventDefault(); if (stepIndex === trace.steps.length) setStepIndex(1); setPlaying(value => !value);
-      } else if (trace && e.key.toLowerCase() === 'r') { e.preventDefault(); setPlaying(false); setStepIndex(1); }
+        e.preventDefault(); navigate(e.key === 'ArrowRight' ? frames.find(index => index > stepIndex) ?? trace.steps.length : [...frames].reverse().find(index => index < stepIndex) ?? 1);
+      } else if (e.key === ' ') { e.preventDefault(); togglePlayback(); }
+      else if (e.key.toLowerCase() === 'r') { e.preventDefault(); navigate(1); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [trace, stepIndex]);
-
+  }, [trace, stepIndex, frames, prediction, loading]);
   const chooseLesson = (next: Lesson) => {
     setLesson(next); setDraft(next.defaults); setDefinitionMode('empty'); setIsDefined(false);
-    setValuesText(''); setEdgesText('');
+    setValuesText(''); setEdgesText(''); setTrace(null); setPrediction(null); setExperimentNote('');
     customValues.current = next.exampleValues.join(', ');
     customEdges.current = next.id === 'graph' ? '0-1, 0-2, 1-3, 2-4' : '';
-    void load(next.defaults, false);
+    void load(next.defaults, 'preview');
   };
-  const chooseDefinition = (mode: 'empty' | 'custom') => {
-    setDefinitionMode(mode);
-    setValuesText(mode === 'empty' ? '' : customValues.current);
-    setEdgesText(mode === 'empty' ? '' : customEdges.current);
+  const chooseDefinition = (next: 'empty' | 'custom') => {
+    setDefinitionMode(next); setValuesText(next === 'empty' ? '' : customValues.current); setEdgesText(next === 'empty' ? '' : customEdges.current);
   };
   const chooseOperation = (operation: string) => {
     if (!isDefined && operation !== 'define') return;
+    setPlaying(false); setPrediction(null); if (trace && isDefined) setStepIndex(trace.steps.length);
     setDraft(value => ({ ...value, operation }));
     if (operation === 'define') chooseDefinition(definitionMode);
   };
-  const resetDefinition = () => {
-    setIsDefined(false);
-    setDraft(value => ({ ...value, operation: 'define' }));
-    chooseDefinition(definitionMode);
+  const prepare = (params: SimulationParams, note = '') => {
+    setDraft({ ...params, operation: params.operation === 'define' ? nextOperation(params.structure) : params.operation });
+    setDefinitionMode('custom'); setValuesText(params.values.join(', '));
+    setEdgesText(params.edges?.map(([u, v]) => `${u}-${v}`).join(', ') ?? ''); setExperimentNote(note);
+    void load(params, params.operation === 'define' ? 'setup' : 'run');
   };
-  const run = () => {
+  const parseInputs = (): SimulationParams | null => {
     const empty = draft.operation === 'define' && definitionMode === 'empty';
     const tokens = empty || !valuesText.trim() ? [] : valuesText.split(',').map(value => value.trim());
-    if (tokens.some(value => !/^-?\d+$/.test(value))) {
-      setError('Enter comma-separated integers, or leave the values empty.'); return;
-    }
+    if (tokens.some(value => !/^-?\d+$/.test(value))) { setError('Enter comma-separated integers, or leave the values empty.'); return null; }
     const edges: number[][] = [];
     if (lesson.id === 'graph' && !empty && edgesText.trim()) {
       for (const item of edgesText.split(',')) {
         const match = item.match(/^\s*(-?\d+)\s*-\s*(-?\d+)\s*$/);
-        if (!match) { setError('Use edges such as 0-1, 0-2. Each edge needs two integer vertices.'); return; }
+        if (!match) { setError('Use edges such as 0-1, 0-2. Each edge needs two integer vertices.'); return null; }
         edges.push([Number(match[1]), Number(match[2])]);
       }
     }
-    void load({ ...draft, values: tokens.map(Number), edges }, true);
+    return { ...draft, values: tokens.map(Number), edges };
   };
-  const navigate = (next: number) => { setPlaying(false); setStepIndex(next); };
-
+  const run = () => { const params = parseInputs(); if (params) { setExperimentNote(''); void load(params); } };
+  const directAction = (operation: string, patch: Partial<SimulationParams> = {}) => {
+    const params = parseInputs(); if (!params || !isDefined || loading) return;
+    const next = { ...params, ...patch, operation };
+    setDraft(next); setExperimentNote(''); void load(next);
+  };
+  const insertAt = (index: number) => {
+    chooseOperation('insert'); setDraft(value => ({ ...value, operation: 'insert', insertIndex: index }));
+    operationRef.current?.scrollIntoView({ block: 'nearest', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    window.setTimeout(() => operationRef.current?.querySelector<HTMLInputElement>('[aria-label="Value"]')?.focus({ preventScroll: true }), 0);
+  };
+  const editAt = (index: number, value: number) => {
+    const params = parseInputs(); if (!params || !Number.isInteger(value) || Math.abs(value) > 1000000) return;
+    const values = [...params.values]; values[index] = value;
+    prepare({ ...params, operation: 'define', values }, 'Value updated. Try an operation on your edited array.');
+  };
+  const changeMode = (next: ExperienceMode) => { setMode(next); setPrediction(null); setPlaying(false); if (next === 'explore' && trace && isDefined) setStepIndex(trace.steps.length); };
+  const reset = () => {
+    setIsDefined(false); setDefinitionMode('empty'); setValuesText(''); setEdgesText(''); setDraft(lesson.defaults); setPrediction(null); setExperimentNote('');
+    void load(lesson.defaults, 'preview');
+  };
   const toggleTheme = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const isReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const isAutomated = typeof navigator !== 'undefined' && navigator.webdriver;
     const nextDark = !dark;
-
-    if (!document.startViewTransition || isReducedMotion || isAutomated) {
-      setDark(nextDark);
-      document.documentElement.classList.toggle('dark', nextDark);
-      return;
-    }
-
-    const rect = e.currentTarget?.getBoundingClientRect?.() ?? { left: window.innerWidth - 80, top: 20, width: 32, height: 32 };
-    const x = e.clientX || (rect.left + rect.width / 2);
-    const y = e.clientY || (rect.top + rect.height / 2);
-
-    const endRadius = Math.hypot(
-      Math.max(x, window.innerWidth - x),
-      Math.max(y, window.innerHeight - y)
-    );
-
-    const transition = document.startViewTransition(() => {
-      flushSync(() => {
-        setDark(nextDark);
-        document.documentElement.classList.toggle('dark', nextDark);
-      });
-    });
-
-    if (transition && transition.ready) {
-      transition.ready.then(() => {
-        document.documentElement.animate(
-          {
-            clipPath: [
-              `circle(0px at ${x}px ${y}px)`,
-              `circle(${endRadius}px at ${x}px ${y}px)`,
-            ],
-          },
-          {
-            duration: 500,
-            easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
-            pseudoElement: '::view-transition-new(root)',
-          }
-        );
-      }).catch(() => {});
-    }
+    const apply = () => { setDark(nextDark); document.documentElement.classList.toggle('dark', nextDark); };
+    if (!document.startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches || navigator.webdriver) { apply(); return; }
+    const rect = e.currentTarget.getBoundingClientRect(), x = e.clientX || rect.left + rect.width / 2, y = e.clientY || rect.top + rect.height / 2;
+    const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    const transition = document.startViewTransition(() => flushSync(apply));
+    void transition.ready.then(() => document.documentElement.animate({ clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] }, { duration: 500, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)' })).catch(() => apply());
   };
-
-  const button = 'inline-flex items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-medium transition-colors hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800';
-
+  const modes = [
+    { id: 'learn' as const, label: 'Learn', icon: BookOpen, description: 'Follow the changes, one key step at a time.' },
+    { id: 'explore' as const, label: 'Explore', icon: MousePointerClick, description: 'Build, edit, and experiment. Results appear immediately.' },
+    { id: 'predict' as const, label: 'Predict', icon: Brain, description: 'Make a prediction, then watch the algorithm explain it.' },
+  ];
+  const complete = !!trace && stepIndex === trace.steps.length;
+  const result = trace?.metadata.result;
+  const operationControls = <OperationForm lesson={lesson} draft={draft} onDraft={setDraft} onOperation={chooseOperation} values={valuesText} onValues={value => { setValuesText(value); customValues.current = value; }} edges={edgesText} onEdges={value => { setEdgesText(value); customEdges.current = value; }} definitionMode={definitionMode} onDefinitionMode={chooseDefinition} isDefined={isDefined} onResetDefinition={reset} loading={loading} onRun={run} />;
   return <div className="min-h-screen bg-slate-100 text-slate-950 dark:bg-slate-950 dark:text-slate-50">
     <header ref={headerRef} className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
-      <div className="mx-auto flex max-w-[1800px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-3">
-          <span className="algo-primary flex h-8 w-8 items-center justify-center rounded-lg shadow-xs"><Asterisk className="h-5 w-5 text-white stroke-[2.5]" aria-hidden="true" /></span>
-          <span className="font-display text-base font-bold">AlgoFrame</span>
-          <span className="hidden font-mono text-[10px] tracking-wider text-slate-500 sm:inline dark:text-slate-400">/ DSA LEARNING LAB</span>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <span className="mr-1 hidden rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1 font-mono text-[10px] font-semibold text-cyan-700 sm:inline dark:border-cyan-800/80 dark:bg-cyan-950/70 dark:text-cyan-300">Python 3</span>
-          <button className={`${button} active:scale-95`} onClick={() => setShowCode(value => !value)} aria-expanded={showCode}><Code2 className={`h-3.5 w-3.5 transition-transform duration-200 ${showCode ? 'rotate-0' : '-rotate-12'}`} aria-hidden="true" />{showCode ? 'Hide code' : 'Show code'}</button>
-          <button className={`${button} group relative overflow-hidden active:scale-95`} onClick={toggleTheme} aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}>
-            <span className="relative flex h-4 w-4 items-center justify-center transition-transform duration-300 group-hover:scale-110">
-              {dark ? <Sun className="h-4 w-4 text-amber-400 transition-transform duration-300 group-hover:rotate-45" /> : <Moon className="h-4 w-4 text-slate-700 transition-transform duration-300 group-hover:-rotate-12 dark:text-slate-300" />}
-            </span>
-          </button>
-        </div>
+      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <a href="#workspace" className="flex items-center gap-2.5 font-display font-bold"><span className="algo-primary flex h-9 w-9 items-center justify-center rounded-xl"><Asterisk size={22} /></span>AlgoFrame<span className="ml-2 hidden text-xs font-normal text-slate-500 sm:inline dark:text-slate-400">a playground for curious minds</span></a>
+        <div className="flex items-center gap-2"><button type="button" data-action="toggle-code" className="play-chip" onClick={() => setShowCode(value => !value)} aria-expanded={showCode}><Code2 size={15} /><span className="hidden sm:inline">{showCode ? 'Hide' : 'Show'}</span> Python</button><button type="button" className="play-icon" onClick={toggleTheme} aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}>{dark ? <Sun size={18} /> : <Moon size={18} />}</button></div>
       </div>
-      {/* Fresh range tracking per execution avoids stale input state after loading clamps max to 1. */}
-      <PlaybackBar key={executionId} trace={trace} stepIndex={stepIndex} playing={playing} loading={loading} speed={speed} onSpeedChange={setSpeed} onNavigate={navigate} onToggle={() => {
-        if (!trace) return;
-        if (stepIndex === trace.steps.length) setStepIndex(1);
-        setPlaying(value => !value);
-      }} />
+      <PlaybackBar key={executionId} trace={trace} stepIndex={stepIndex} playing={playing} loading={loading} locked={!!prediction} speed={speed} onSpeedChange={setSpeed} frames={frames} stepMode={stepMode} onStepMode={setStepMode} onNavigate={navigate} onToggle={togglePlayback} />
     </header>
-    <div className="mx-auto flex max-w-[1800px] flex-col gap-5 px-4 py-5 sm:px-6 xl:flex-row xl:gap-6">
-      <aside className="workspace-sticky min-w-0 xl:sticky xl:w-[190px] xl:shrink-0 xl:self-start">
-        <nav aria-label="Lecture topics" className="flex gap-2 overflow-x-auto pb-2 xl:flex-col xl:overflow-visible">
-          {LESSONS.map(item => <button key={item.id} aria-current={lesson.id === item.id ? 'page' : undefined} onClick={() => chooseLesson(item)} className={`group flex shrink-0 items-center gap-3 rounded-lg border px-3 py-3 text-left text-xs transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] xl:shrink xl:hover:translate-x-1 ${lesson.id === item.id ? 'algo-selected text-white' : 'border-transparent text-slate-600 hover:bg-white hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200'}`}>
-            <span className={`font-mono text-[10px] ${lesson.id === item.id ? 'text-white/90 font-bold' : 'opacity-70 group-hover:opacity-100'}`}>0{item.week}</span><span className="font-medium">{item.title}</span>
-          </button>)}
-        </nav>
+    <div className="mx-auto flex max-w-[1600px] flex-col gap-5 px-4 py-6 sm:px-6 xl:flex-row xl:gap-8">
+      <aside className="workspace-sticky min-w-0 xl:sticky xl:w-44 xl:shrink-0 xl:self-start">
+        <p className="mb-3 hidden px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-500 xl:block dark:text-slate-400">Your playground</p>
+        <nav aria-label="Lecture topics" className="flex gap-2 overflow-x-auto pb-2 xl:flex-col xl:overflow-visible">{LESSONS.map((item, i) => <button key={item.id} type="button" data-lesson={item.id} aria-current={lesson.id === item.id ? 'page' : undefined} onClick={() => chooseLesson(item)} className={`group flex min-h-11 shrink-0 items-center gap-3 rounded-xl px-3 py-3 text-left text-xs transition-colors ${lesson.id === item.id ? 'algo-selected' : 'text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-900'}`}><span className="font-mono text-[10px] opacity-75">{String(i + 1).padStart(2, '0')}</span>{item.title}{lesson.id === item.id && <ArrowRight className="ml-auto h-3.5 w-3.5" />}</button>)}</nav>
       </aside>
-      <main className="min-w-0 flex-1 space-y-5">
-        <div className="algo-panel-enter" key={lesson.id}>
-          <p className="mb-1 font-mono text-[10px] font-bold tracking-wider text-sage-600 dark:text-sage-400">{lesson.week > 6 ? 'EXTRA TOPIC' : `WEEK 0${lesson.week}`} / DATA STRUCTURES &amp; ALGORITHMS</p>
-          <h1 className="font-display text-2xl font-bold tracking-tight">{lesson.title}</h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{lesson.description}</p>
-          <p className="mt-2 font-mono text-[10px] text-sage-800 dark:text-sage-200">{lesson.principle}</p>
+      <main id="workspace" className="min-w-0 flex-1 scroll-mt-44 space-y-5">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div><p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-sage-700 dark:text-sage-300">See it. Try it. Understand it.</p><h1 className="font-display text-3xl font-bold tracking-tight">{lesson.title}</h1><p className="mt-2 max-w-xl text-sm text-slate-600 dark:text-slate-300">{lesson.description}</p></div>
+          <div className="flex gap-1 rounded-2xl border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" role="group" aria-label="Learning mode">{modes.map(item => <button type="button" key={item.id} data-mode={item.id} aria-pressed={mode === item.id} onClick={() => changeMode(item.id)} className={`inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-xs font-semibold ${mode === item.id ? 'bg-sage-50 text-sage-800 dark:bg-sage-950 dark:text-sage-200' : 'text-slate-500 dark:text-slate-400'}`}><item.icon size={15} />{item.label}</button>)}</div>
         </div>
-        <OperationForm lesson={lesson} draft={draft} onDraft={setDraft} onOperation={chooseOperation} values={valuesText} onValues={value => { setValuesText(value); customValues.current = value; }} edges={edgesText} onEdges={value => { setEdgesText(value); customEdges.current = value; }} definitionMode={definitionMode} onDefinitionMode={chooseDefinition} isDefined={isDefined} onResetDefinition={resetDefinition} loading={loading} onRun={run} />
-        {error && <div role="alert" className="rounded-lg border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-200">{error}</div>}
-        {loading && <div role="status" className="rounded-xl border border-slate-200 bg-white p-10 text-center text-sm dark:border-slate-800 dark:bg-slate-900">Preparing your Python execution...</div>}
+        <p className="text-xs text-slate-500 dark:text-slate-400">{modes.find(item => item.id === mode)!.description}</p>
+        {!isDefined && <section className="play-welcome play-panel p-5 sm:p-7"><div className="flex items-start gap-4"><span className="hidden rounded-2xl bg-sage-100 p-3 text-sage-700 sm:block dark:bg-sage-950 dark:text-sage-300"><Sparkles size={26} /></span><div><h2 className="font-display text-xl font-bold">Make your first move.</h2><p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600 dark:text-slate-300">Start with a small example, then change it yourself. Every value has a story. Every operation shows you how it works.</p><div className="mt-5 flex flex-wrap gap-3"><button type="button" data-action="try-example" disabled={loading} className="algo-primary inline-flex min-h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold" onClick={() => prepare(exampleParams(lesson))}>Try this example<ArrowRight size={16} /></button><button type="button" disabled={loading} className="play-chip" onClick={() => prepare({ ...lesson.defaults, operation: 'define' })}>Start empty</button></div></div></div></section>}
+        <div ref={operationRef} className="play-panel scroll-mt-44 p-4 sm:p-5">{isDefined ? operationControls : <details><summary className="min-h-8 cursor-pointer content-center text-sm font-semibold">Create my own starting structure</summary><div className="mt-4">{operationControls}</div></details>}</div>
+        {error && <div role="alert" className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-200">{error}</div>}
+        {loading && <p role="status" className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300"><span className="h-2 w-2 animate-pulse rounded-full bg-sage-500" />Preparing your next move…</p>}
+        {experimentNote && <p className="flex items-center gap-2 text-sm text-sage-800 dark:text-sage-200"><FlaskConical size={16} />{experimentNote}</p>}
+        {prediction && <PredictionCard key={executionId} prediction={prediction} onContinue={() => { setPrediction(null); setPlaying(true); }} />}
         {trace && step && <>
-          <div className={`grid min-w-0 items-start gap-5 ${showCode ? 'lg:grid-cols-[minmax(0,1fr)_minmax(340px,0.85fr)]' : ''}`}>
-            <LearningCanvas key={`${trace.structure}:${trace.metadata.operation}`} trace={trace} step={step} />
+          <div className={`grid min-w-0 items-start gap-5 ${showCode ? 'lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.65fr)]' : ''}`}>
+            <LearningCanvas key={lesson.id} trace={trace} step={step} narration={describeStep(trace, stepIndex)} editable={isDefined && complete && !loading && !prediction} onInsert={insertAt} onEdit={editAt} onAction={directAction} />
             {showCode && <div className="workspace-sticky min-w-0 lg:sticky"><PythonCodeBox containerRef={codeRef} filename={trace.python_filename} code={trace.python_code} activeLine={step.python_line} isOpen={showCode} onToggleOpen={() => setShowCode(value => !value)} sidePanel /></div>}
           </div>
-          <ComplexityPanel trace={trace} />
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3 dark:border-slate-800">
-            <p className="min-w-0 break-words text-xs"><span className="text-slate-600 dark:text-slate-300">Result at completion: </span><span className="font-mono font-semibold">{stepIndex !== trace.steps.length ? 'Advance to the final step' : trace.metadata.result === null ? 'None' : typeof trace.metadata.result === 'boolean' ? (trace.metadata.result ? 'True' : 'False') : JSON.stringify(trace.metadata.result)}</span></p>
-            <span className="font-mono text-[10px] text-slate-600 dark:text-slate-300">{lesson.id === 'graph' ? 'V = vertices / E = edges' : 'n = live entries / c = capacity / h = height'}</span>
-          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 px-1 text-xs text-slate-500 dark:text-slate-400"><p><strong className="text-slate-700 dark:text-slate-200">{lesson.principle}</strong></p><p aria-live="polite">{complete && !prediction ? `Result: ${result === null ? 'None' : typeof result === 'boolean' ? result ? 'True' : 'False' : JSON.stringify(result)}` : 'Follow the animation, or drag the timeline.'}</p></div>
+          <details className="play-panel p-4 sm:p-5"><summary className="cursor-pointer text-sm font-semibold">Why this costs what it costs <span className="ml-2 font-mono text-xs text-sage-700 dark:text-sage-300">{trace.analysis?.worst_time}</span></summary><div className="mt-4"><ComplexityPanel trace={trace} /></div></details>
         </>}
+        <section aria-label="Experiments" className="space-y-3"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="flex items-center gap-2 font-display text-base font-bold"><FlaskConical size={18} />What happens if…</h2><span className="text-xs text-slate-500 dark:text-slate-400">Each experiment replaces the current example.</span></div><div className="grid gap-3 sm:grid-cols-2">{experimentsFor(lesson).map(experiment => <button key={experiment.id} type="button" data-experiment={experiment.id} disabled={loading} className="play-panel group flex items-center gap-3 p-4 text-left transition-colors hover:border-sage-400" onClick={() => prepare(experiment.params, experiment.description)}><span className="rounded-xl bg-sage-50 p-2 text-sage-700 dark:bg-sage-950 dark:text-sage-300"><Sparkles size={18} /></span><span className="min-w-0 flex-1"><strong className="block text-sm">{experiment.title}</strong><span className="mt-1 block text-xs leading-relaxed text-slate-500 dark:text-slate-400">{experiment.description}</span></span><ArrowRight size={16} className="shrink-0 text-slate-400 transition-transform group-hover:translate-x-1" /></button>)}</div></section>
+        <button type="button" data-action="open-comparison" aria-expanded={showComparison} onClick={() => setShowComparison(value => !value)} className="play-chip"><ArrowRightLeft size={16} />{showComparison ? 'Close comparison' : 'Compare array vs linked list'}</button>
+        {showComparison && <ComparisonLab />}
+        <p className="pb-4 text-[10px] text-slate-500 dark:text-slate-400">Keyboard: ← / → step · Space play / pause · R replay · C Python. Memory addresses are illustrative.</p>
       </main>
     </div>
   </div>;

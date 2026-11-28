@@ -1,80 +1,30 @@
 import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from 'lucide-react';
 import type { SimulationTrace } from '../types/traceTypes';
-
+import type { StepMode } from '../data/playground';
 interface Props {
-  trace: SimulationTrace | null;
-  stepIndex: number;
-  playing: boolean;
-  loading: boolean;
-  speed: 0.5 | 1 | 2;
-  onSpeedChange: (speed: 0.5 | 1 | 2) => void;
-  onNavigate: (step: number) => void;
-  onToggle: () => void;
+  trace: SimulationTrace | null; stepIndex: number; playing: boolean; loading: boolean; locked: boolean;
+  speed: 0.5 | 1 | 2; onSpeedChange: (speed: 0.5 | 1 | 2) => void;
+  frames: number[]; stepMode: StepMode; onStepMode: (mode: StepMode) => void;
+  onNavigate: (step: number) => void; onToggle: () => void;
 }
-
-export function PlaybackBar({ trace, stepIndex, playing, loading, speed, onSpeedChange, onNavigate, onToggle }: Props) {
-  const unavailable = !trace || loading;
-  const total = trace?.steps.length ?? 1;
-  const button = 'inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-medium transition-all hover:bg-slate-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800';
-  const nextSpeed = () => onSpeedChange(speed === 1 ? 2 : speed === 2 ? 0.5 : 1);
-
-  return (
-    <section aria-label="Steps playback" className="border-t border-slate-200 dark:border-slate-800">
-      <div className="mx-auto flex max-w-[1800px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:px-6">
-        <div className="min-w-[88px] flex-1 sm:flex-none">
-          <p className="font-mono text-[11px] font-semibold" aria-live="polite">
-            {unavailable ? 'Preparing execution' : `Step ${stepIndex} / ${total}`}
-          </p>
-          <p className="mt-0.5 font-mono text-[10px] text-slate-600 dark:text-slate-300">
-            {trace && !loading ? `Python line ${trace.steps[stepIndex - 1].python_line}` : 'Define your initial state'}
-          </p>
-        </div>
-        <input
-          className="order-last w-full min-w-0 accent-sage-700 sm:order-none sm:w-auto sm:flex-1 dark:accent-sage-300"
-          type="range"
-          min={1}
-          max={total}
-          value={trace ? stepIndex : 1}
-          disabled={unavailable}
-          onChange={e => onNavigate(Number(e.target.value))}
-          aria-label="Execution step"
-        />
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            className={`${button} px-2.5 font-mono text-[11px]`}
-            onClick={nextSpeed}
-            aria-label={`Playback speed ${speed}x`}
-            title="Cycle playback speed (0.5x, 1x, 2x)"
-          >
-            {speed}×
-          </button>
-          <button className={button} disabled={unavailable} onClick={() => onNavigate(1)} aria-label="Reset to first step">
-            <RotateCcw className="h-3.5 w-3.5" />
-          </button>
-          <button className={button} disabled={unavailable || stepIndex === 1} onClick={() => onNavigate(Math.max(1, stepIndex - 1))} aria-label="Previous step">
-            <ChevronLeft className="h-3.5 w-3.5" />
-          </button>
-          <button
-            className={`${button} ${playing ? 'border-sage-500 bg-sage-50 text-sage-800 dark:border-sage-600 dark:bg-sage-950/60 dark:text-sage-200 shadow-xs' : ''}`}
-            disabled={unavailable}
-            onClick={onToggle}
-            aria-label={playing ? 'Pause playback' : 'Play execution'}
-          >
-            {playing ? <Pause className="h-3.5 w-3.5 animate-pulse text-sage-700 dark:text-sage-300" /> : <Play className="h-3.5 w-3.5" />}
-          </button>
-          <button
-            className="algo-primary inline-flex h-9 items-center gap-1 rounded-md px-3 text-xs font-medium disabled:opacity-45 active:scale-95 transition-all"
-            aria-label="Next step"
-            disabled={unavailable || stepIndex === total}
-            onClick={() => onNavigate(Math.min(total, stepIndex + 1))}
-          >
-            <span className="hidden sm:inline">Next</span>
-            <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-          </button>
-        </div>
-        <p className="hidden font-mono text-[10px] text-slate-600 2xl:block dark:text-slate-300">← / → step · Space play · R reset · C code</p>
+export function PlaybackBar({ trace, stepIndex, playing, loading, locked, speed, onSpeedChange, frames, stepMode, onStepMode, onNavigate, onToggle }: Props) {
+  const unavailable = !trace || loading || locked;
+  const position = Math.max(0, frames.findIndex(index => index >= stepIndex));
+  const total = Math.max(1, frames.length);
+  return <section aria-label="Steps playback" className="border-t border-slate-200 dark:border-slate-800">
+    <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
+      <div className="min-w-24"><p className="font-mono text-[11px] font-semibold">{loading ? 'Preparing…' : locked ? 'Your prediction' : `Step ${position + 1} / ${total}`}</p><p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">{trace ? `Python line ${trace.steps[stepIndex - 1].python_line}` : 'Choose an example'}</p></div>
+      <div className="flex items-center gap-1">
+        <button type="button" className="play-icon" disabled={unavailable} onClick={() => onNavigate(1)} aria-label="Reset to first step"><RotateCcw size={16} /></button>
+        <button type="button" className="play-icon" disabled={unavailable || stepIndex === 1} onClick={() => onNavigate([...frames].reverse().find(index => index < stepIndex) ?? 1)} aria-label="Previous step"><ChevronLeft size={18} /></button>
+        <button type="button" className="algo-primary flex h-11 w-11 items-center justify-center rounded-full" disabled={unavailable} onClick={onToggle} aria-label={playing ? 'Pause playback' : 'Play execution'}>{playing ? <Pause size={18} /> : <Play size={18} />}</button>
+        <button type="button" className="play-icon" disabled={unavailable || stepIndex === trace?.steps.length} onClick={() => onNavigate(frames.find(index => index > stepIndex) ?? frames.at(-1)!)} aria-label="Next step"><ChevronRight size={18} /></button>
       </div>
-    </section>
-  );
+      <input className="order-last h-5 w-full min-w-0 accent-sage-700 md:order-none md:w-auto md:flex-1 dark:accent-sage-400" type="range" min={1} max={total} value={position + 1} disabled={unavailable} onChange={e => onNavigate(frames[Number(e.target.value) - 1])} aria-label="Execution step" />
+      <button type="button" className="play-chip font-mono text-xs" onClick={() => onSpeedChange(speed === 1 ? 2 : speed === 2 ? 0.5 : 1)} aria-label={`Playback speed ${speed}x`}>{speed}×</button>
+      <div className="ml-auto flex rounded-xl border border-slate-200 p-1 dark:border-slate-700" role="group" aria-label="Step detail">
+        {(['concepts', 'lines'] as const).map(mode => <button key={mode} type="button" data-playback={mode} disabled={locked || loading} aria-pressed={stepMode === mode} className={`min-h-9 rounded-lg px-3 text-xs ${stepMode === mode ? 'bg-slate-100 font-semibold dark:bg-slate-800' : 'text-slate-500 dark:text-slate-400'}`} onClick={() => onStepMode(mode)}>{mode === 'concepts' ? 'Key steps' : 'Python lines'}</button>)}
+      </div>
+    </div>
+  </section>;
 }
